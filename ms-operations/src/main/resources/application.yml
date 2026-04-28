@@ -35,7 +35,7 @@ spring:
 application:
   security:
     jwt:
-      secret-key: ${JWT_SECRET_KEY:dummy_key_for_dev_purposes_only}
+      secret-key: ${JWT_SECRET_KEY}
 
 app:
   tenant:

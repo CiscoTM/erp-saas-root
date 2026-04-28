@@ -49,10 +49,11 @@ public class BookingEventConsumer {
 
         } catch (Exception e) {
             logger.severe("❌ ERROR EN CONSUMER: " + e.getMessage());
-            // Imprimimos el stack trace para ver si el error es realmente de JPA o de lógica
             e.printStackTrace();
+            // ¡CRÍTICO! Debes relanzar la excepción para que Kafka sepa que falló
+            // y pueda reintentar o enviar a una Dead Letter Topic (DLT).
+            throw new RuntimeException("Error procesando evento de Kafka", e);
         } finally {
-            // 5. Siempre limpiar el hilo
             TenantContext.clear();
         }
     }

@@ -1,0 +1,45 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ms-operations
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/erp_central
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:admin_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        multiTenancy: DATABASE
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    ignore-migration-patterns: "*:missing,*:ignored,*:future"
+    locations: classpath:db/migration/tenants
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: operations-group-v4
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY:dummy_key_for_dev_purposes_only}
+
+app:
+  tenant:
+    datasource:
+      base-url: jdbc:postgresql://localhost:5433/
+      username: ${DB_USER:admin}
+      password: ${DB_PASSWORD:admin_password}

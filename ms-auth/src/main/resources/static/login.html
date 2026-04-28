@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso ERP - Multitenant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #f4f7f6; display: flex; align-items: center; height: 100vh; }
+        .login-card { max-width: 400px; width: 100%; margin: auto; padding: 2rem; border-radius: 15px; }
+    </style>
+</head>
+<body>
+<div class="card login-card shadow border-0">
+    <h3 class="text-center mb-4">ERP Login</h3>
+    <form id="loginForm">
+        <div class="mb-3">
+            <label>Identificador de Empresa</label>
+            <input type="text" id="tenantId" class="form-control" placeholder="ej: lafinca-eventos" required>
+        </div>
+        <div class="mb-3">
+            <label>Usuario</label>
+            <input type="text" id="username" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Contraseña</label>
+            <input type="password" id="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2">Iniciar Sesión</button>
+    </form>
+    <div id="error" class="alert alert-danger mt-3 d-none small"></div>
+</div>
+
+<script>
+    document.getElementById('loginForm').onsubmit = async (e) => {
+    e.preventDefault();
+
+    const tenantIdInput = document.getElementById('tenantId').value;
+    const payload = {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        tenantId: tenantIdInput
+    };
+
+    try {
+        const resp = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (resp.ok) {
+            const data = await resp.json();
+
+            // 1. Guardamos el token y el tenantId
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('tenantId', tenantIdInput);
+
+            // 2. Extraemos el rol del JWT para saber a dónde redirigir
+            // El payload es la segunda parte del token (índice 1) separada por puntos
+            try {
+                const base64Url = data.token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+
+                const decoded = JSON.parse(jsonPayload);
+                const userRole = decoded.role; // Extraemos el campo "role" que configuramos en JwtService
+
+                console.log("Login exitoso. Rol detectado:", userRole);
+
+                // 3. Redirección inteligente
+                if (userRole === 'SUPERADMIN') {
+                    // Si eres Superadmin, vas al centro de mando global
+                    window.location.replace('/admin/index.html');
+                } else {
+                    // Si eres un usuario de empresa (ADMIN/USER), vas al ERP
+                    window.location.replace('/index.html');
+                }
+
+            } catch (parseError) {
+                console.error("Error al decodificar el token:", parseError);
+                // Por defecto, si falla la decodificación, intentamos ir al index
+                window.location.replace('/index.html');
+            }
+
+        } else {
+            const errorDiv = document.getElementById('error');
+            errorDiv.innerText = "Credenciales incorrectas o acceso denegado";
+            errorDiv.classList.remove('d-none');
+        }
+    } catch (err) {
+        console.error("Error en la conexión:", err);
+        alert("No se pudo conectar con el servidor.");
+    }
+};
+</script>
+</body>
+</html>

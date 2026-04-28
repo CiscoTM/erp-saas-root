@@ -1,0 +1,32 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: ms-auth
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/erp_central
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:admin_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+app:
+  tenant:
+    default-db-user: ${TENANT_DB_USER:admin}
+    default-db-password: ${TENANT_DB_PASSWORD:admin_password}
+    datasource:
+      base-url: jdbc:postgresql://localhost:5433/
+      username: ${DB_USER:admin}
+      password: ${DB_PASSWORD:admin_password}
+
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY:dummy_key_for_dev_purposes_only}

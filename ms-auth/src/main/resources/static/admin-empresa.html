@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Empresa - Configuración</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark px-4 mb-4">
+    <a class="navbar-brand" href="/index.html">ERP: Configuración Local</a>
+    <span class="text-white-50" id="tenantDisplay"></span>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm p-4 mb-4">
+                <h5>🛠️ Gestión de Salas (Rooms)</h5>
+                <form id="roomForm" class="mb-4">
+                    <input type="text" id="roomName" class="form-control mb-2" placeholder="Nombre de Sala (ej: Salón Real)" required>
+                    <input type="number" id="capacity" class="form-control mb-2" placeholder="Capacidad máx." required>
+                    <input type="number" id="price" class="form-control mb-2" placeholder="Precio por hora" required>
+                    <button type="submit" class="btn btn-primary w-100">Registrar Sala</button>
+                </form>
+                <ul id="roomList" class="list-group"></ul>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+                <h5>👤 Alta de Usuarios</h5>
+                <form id="userForm">
+                    <input type="text" id="newUsername" class="form-control mb-2" placeholder="Nombre de usuario" required>
+                    <input type="password" id="newUserPass" class="form-control mb-2" placeholder="Contraseña" required>
+                    <select id="userRole" class="form-select mb-2">
+                        <option value="USER">Vendedor (USER)</option>
+                        <option value="ADMIN">Gerente (ADMIN)</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary w-100">Crear Usuario Local</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    const tenant = localStorage.getItem('tenantId');
+
+    async function apiFetch(url, method = 'GET', body = null) {
+        const options = {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'X-Tenant-ID': tenant
+            }
+        };
+        if (body) options.body = JSON.stringify(body);
+        const resp = await fetch(url, options);
+        return resp.ok ? resp.json() : Promise.reject(await resp.json());
+    }
+
+    // Crear Sala
+    document.getElementById('roomForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('roomName').value,
+            capacity: document.getElementById('capacity').value,
+            pricePerHour: document.getElementById('price').value,
+            active: true
+        };
+        await apiFetch('/api/v1/sales/rooms', 'POST', payload);
+        alert("Sala creada");
+        loadRooms();
+    };
+
+    // Crear Usuario
+    document.getElementById('userForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            username: document.getElementById('newUsername').value,
+            password: document.getElementById('newUserPass').value,
+            role: document.getElementById('userRole').value
+        };
+        await apiFetch('/api/v1/users/create', 'POST', payload);
+        alert("Usuario creado correctamente");
+    };
+
+    async function loadRooms() {
+        const rooms = await apiFetch('/api/v1/sales/rooms');
+        document.getElementById('roomList').innerHTML = rooms.map(r =>
+            `<li class="list-group-item d-flex justify-content-between">
+                ${r.name} <span class="badge bg-info">${r.capacity} pax</span>
+            </li>`
+        ).join('');
+    }
+
+    document.getElementById('tenantDisplay').innerText = tenant.toUpperCase();
+    loadRooms();
+</script>
+</body>
+</html>

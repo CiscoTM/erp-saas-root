@@ -1,0 +1,27 @@
+# --- Secretos y Seguridad ---
+.env
+*.env
+
+# --- Java / Maven ---
+target/
+*.class
+*.jar
+*.war
+# Ignorar envoltorios de maven si se colaron en submódulos
+.mvn/
+mvnw
+mvnw.cmd
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+out/
+.idea_modules/
+
+# --- Otros (Documentación personal) ---
+*.pdf
+*.odt
+
+# --- Infraestructura y Datos ---
+postgres-data/
+*.log

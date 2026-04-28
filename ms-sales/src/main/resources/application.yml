@@ -1,0 +1,59 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ms-sales
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/erp_central
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:admin_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Habilitamos el soporte multi-tenant de Hibernate
+        multiTenancy: DATABASE
+
+  flyway:
+    enabled: false # Las migraciones de inquilinos las gestiona erp-common manualmente
+    baseline-on-migrate: true
+    check-location: false
+    validate-on-migrate: false
+    ignore-migration-patterns: "*:missing"
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: sales-group-v2
+      auto-offset-reset: earliest
+      # Usamos ErrorHandlingDeserializer para que el microservicio no muera si hay un mensaje corrupto
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "*"
+        # SOLUCIÓN AL ERROR DE CLASSNOTFOUND: Mapeo de paquetes entre MS
+        spring.json.type.mapping: "es.tk3.model.TenantEvent:es.tk3.sales.dto.TenantEvent"
+        spring.json.value.default.type: "es.tk3.sales.dto.TenantEvent"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY:dummy_key_for_dev_purposes_only}
+
+app:
+  tenant:
+    datasource:
+      base-url: jdbc:postgresql://localhost:5433/
+      username: ${DB_USER:admin}
+      password: ${DB_PASSWORD:admin_password}

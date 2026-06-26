@@ -1,26 +1,36 @@
-# ERP SaaS Multi-Tenant - Gestión de Eventos y Catering
+# ERP SaaS Multi-Tenant - Gestión Integral de Hostelería y Eventos
 
-Este es un sistema ERP modular diseñado bajo el modelo de Software as a Service (SaaS). Implementa una arquitectura distribuida para gestionar múltiples clientes (Tenants) con aislamiento total de datos.
+Este es un sistema ERP modular y distribuido diseñado bajo el modelo de Software as a Service (SaaS). Está especializado en la gestión de hostelería, catering y eventos, implementando una arquitectura de microservicios con aislamiento total de datos por cliente (Tenant) y comunicación asíncrona robusta.
 
 ## 🛠️ Pilares de la Arquitectura
 
-- **Multi-tenancy Físico:** Estrategia de base de datos por inquilino. Cada cliente tiene su propia instancia de base de datos PostgreSQL, gestionada mediante ruteo dinámico en tiempo de ejecución.
-- **Arquitectura Dirigida por Eventos (EDA):** Comunicación desacoplada entre microservicios mediante **Apache Kafka**.
-- **Consistencia Eventual (Transactional Outbox):** Garantía de que los eventos de ventas se procesen en operaciones sin pérdida de datos, incluso ante fallos de red.
-- **Seguridad Contextual:** Uso de tokens JWT para propagar el `tenantId` a través de todos los servicios.
+* **Multi-tenancy Físico (Database-per-Tenant):** Cada cliente posee su propia base de datos PostgreSQL aislada. El sistema utiliza ruteo dinámico de conexiones (`DynamicRoutingDataSource`) en tiempo de ejecución interceptando el token JWT.
+* **Arquitectura Dirigida por Eventos (EDA):** Comunicación totalmente desacoplada entre microservicios mediante Apache Kafka.
+* **Consistencia Eventual (Transactional Outbox):** Garantiza que ningún evento de dominio se pierda ante caídas de red o de Kafka. Las transacciones de base de datos y la publicación de eventos son atómicas.
+* **Replicación de Datos y CQRS:** Los microservicios mantienen réplicas locales de solo lectura (ej. `DishOperationRef`, `OperationalParameterRef`) actualizadas vía Kafka para evitar llamadas REST síncronas y latencias.
+* **Inmutabilidad Financiera (Snapshots):** Los contratos y ventas persisten una "fotografía" de los parámetros operativos y de rentabilidad vigentes en el momento de la firma, blindando los datos históricos ante cambios futuros en las políticas de precios.
 
-## 📦 Estructura del Proyecto
+## 📦 Estructura de Microservicios
 
-* `erp-common`: Módulo central que contiene la lógica de ruteo dinámico, configuración de JPA multi-tenant y migraciones con Flyway.
-* `ms-auth`: Servicio de identidad, aprovisionamiento de bases de datos para nuevos inquilinos y autenticación.
-* `ms-sales`: Gestión de presupuestos, reservas y espacios. Emisor de eventos de negocio.
-* `ms-operations`: Gestión logística. Consume eventos de ventas para generar hojas de servicio (Function Sheets) de forma automática.
+El ERP está compuesto por los siguientes módulos independientes:
+
+1.  **`erp-common`:** Librería central (Core). Contiene el motor de ruteo multi-tenant, la configuración compartida de seguridad (Filtros JWT), JPA, integraciones con Flyway y la implementación del motor Outbox.
+2.  **`ms-auth`:** Servicio de identidad y gobierno. Centraliza el login, gestiona usuarios y orquesta el aprovisionamiento en caliente de las bases de datos para los nuevos inquilinos (`TenantProvisioning`).
+3.  **`ms-kitchen`:** (Master Data) Corazón de la producción. Gestiona el catálogo maestro de materias primas, alérgenos (normativa UE), escandallos (recetas), platos y plantillas de menú. Propaga los costes reales hacia los demás módulos.
+4.  **`ms-operations`:** Logística y control financiero. Recibe reservas y genera Hojas de Servicio (`Function Sheets`) automáticamente. Mantiene las políticas de rentabilidad (Suelos, Techos, Overheads) y aloja el `PricingEngine`.
+5.  **`ms-sales`:** Frontend transaccional de ventas. Gestiona clientes, espacios y reservas. Ejecuta simulaciones de precios en tiempo real mediante el `PricingSimulationService` apoyándose en réplicas locales de datos operativos.
+
+## 💡 Flujos Core Destacados
+
+* **Pricing Corridor (Simulador de Precios):** Al crear una reserva, el sistema evalúa el coste real de los platos seleccionados, suma los porcentajes operativos y de riesgo (Overhead), y devuelve un pasillo de precios sugerido y mínimo exigido.
+* **Alertas Financieras:** Si un Director de Ventas fuerza la venta de un menú por debajo del coste suelo calculado, el sistema emite una alerta (`DEFICIT_MARGIN_APPROVED`) hacia operaciones o gerencia.
+* **Desglose Inteligente (BOM):** Al confirmar una venta en `ms-sales`, `ms-operations` recibe el evento y explosiona el menú contratado en raciones exactas de producción según los comensales por plato.
 
 ## 🚀 Tecnologías
 
-- Java 17 / Spring Boot 3.2.4
-- Spring Data JPA / Hibernate
-- PostgreSQL (Base central + Bases de inquilinos)
-- Apache Kafka (KRaft mode)
-- Flyway (Migraciones de base de datos distribuidas)
-- Maven (Gestión de módulos)
+* **Backend:** Java 17, Spring Boot 3.2.x, Spring Data JPA / Hibernate
+* **Mensajería:** Apache Kafka (KRaft mode) & Spring Kafka
+* **Persistencia:** PostgreSQL (Esquema Central + N Esquemas de Inquilinos)
+* **Migraciones:** Flyway (Ejecución distribuida por tenant)
+* **Seguridad:** JJWT (JSON Web Tokens)
+* **Observabilidad:** Micrometer Tracing (Sleuth/Zipkin)

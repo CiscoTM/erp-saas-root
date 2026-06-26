@@ -1,8 +1,10 @@
 package es.tk3.common.tenant;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import es.tk3.common.repository.TenantRepository;
-import org.springframework.beans.factory.annotation.Value; // Importante
-import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -15,7 +17,6 @@ import java.util.Map;
 @Configuration
 public class DataSourceConfig {
 
-    // Extraemos los valores del application.yml
     @Value("${spring.datasource.url}")
     private String centralUrl;
 
@@ -28,20 +29,16 @@ public class DataSourceConfig {
     @Value("${spring.datasource.driver-class-name:org.postgresql.Driver}")
     private String driverClassName;
 
+    @Value("${spring.application.name:default-app}")
+    private String applicationName;
+
     @Bean
     @Primary
     public DataSource dataSource(@Lazy TenantRepository repository) {
         DynamicRoutingDataSource routingDataSource = new DynamicRoutingDataSource();
-
         routingDataSource.setTenantRepository(repository);
 
-        // 1. Usamos las variables inyectadas en lugar de Strings fijos
-        DataSource centralDS = DataSourceBuilder.create()
-                .url(centralUrl)
-                .username(centralUsername)
-                .password(centralPassword)
-                .driverClassName(driverClassName)
-                .build();
+        DataSource centralDS = getDataSource();
 
         Map<Object, Object> targetDataSources = new HashMap<>();
         targetDataSources.put("DEFAULT", centralDS);
@@ -52,5 +49,24 @@ public class DataSourceConfig {
         routingDataSource.afterPropertiesSet();
 
         return routingDataSource;
+    }
+
+    private @NonNull DataSource getDataSource() {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(centralUrl);
+        hikariConfig.setUsername(centralUsername);
+        hikariConfig.setPassword(centralPassword);
+        hikariConfig.setDriverClassName(driverClassName);
+
+        hikariConfig.setMaximumPoolSize(2);
+        hikariConfig.setMinimumIdle(0);
+        hikariConfig.setIdleTimeout(30000);
+        hikariConfig.setConnectionTimeout(30000);
+
+        String poolName = "CentralPool-" + applicationName.toUpperCase();
+        hikariConfig.setPoolName(poolName);
+        hikariConfig.addDataSourceProperty("ApplicationName", poolName);
+
+        return new HikariDataSource(hikariConfig);
     }
 }

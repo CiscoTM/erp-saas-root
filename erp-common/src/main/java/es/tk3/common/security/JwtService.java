@@ -60,10 +60,6 @@ public class JwtService {
     }
 
     private SecretKey getSignInKey() {
-        // Log temporal para ver la clave en consola
-        System.out.println("DEBUG: La clave que llega es: " + SECRET_KEY);
-
-        // Si la clave tiene guiones bajos o caracteres raros, esto fallará
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }

@@ -18,8 +18,8 @@ public class AuthService {
     @Autowired private JwtService jwtService;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    @Autowired private UserRepository userRepository;             // Tabla 'users' (Central)
-    @Autowired private TenantUserRepository tenantUserRepository; // Tabla 'tenant_users' (Bares)
+    @Autowired private UserRepository userRepository;
+    @Autowired private TenantUserRepository tenantUserRepository;
 
     public String login(String username, String password, String tenantId) {
         boolean isMaster = (tenantId == null ||
@@ -54,7 +54,6 @@ public class AuthService {
 
     private String handleTenantLogin(String username, String password, String tenantId) {
         try {
-            // Buscamos en 'tenant_users' de la base de datos del bar
             es.tk3.common.model.TenantUser tenantUser = tenantUserRepository.findByUsername(username)
                     .orElseThrow(() -> {
                         log.error("❌ Usuario de bar no encontrado: {} en tenant {}", username, tenantId);
@@ -63,7 +62,6 @@ public class AuthService {
 
             if (passwordEncoder.matches(password, tenantUser.getPassword())) {
                 log.info("✅ Login tenant exitoso: {} (Bar: {})", username, tenantId);
-                // Usamos el rol que viene de la tabla del bar (ej: TENANT_ADMIN)
                 return jwtService.generateToken(username, tenantId, tenantUser.getRole());
             }
             throw new RuntimeException("Credenciales inválidas");

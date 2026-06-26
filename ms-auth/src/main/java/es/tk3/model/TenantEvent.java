@@ -12,7 +12,7 @@ public class TenantEvent {
     private String adminUsername;
 
     @JsonProperty("adminPass")
-    private String adminPass; // 👈 Unificado con el JSON y ms-sales
+    private String adminPass;
 
     private String dbUrl;
     private String dbUsername;

@@ -29,11 +29,15 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/login.html", "/api/auth/**", "/auth/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/login.html", "/api/auth/**", "/auth/**", "/error").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/tenants").hasRole("SUPERADMIN")
                         .requestMatchers("/api/v1/tenants/**").hasRole("SUPERADMIN")
+
+                        .requestMatchers("/api/recipes/**").hasAnyAuthority("ROLE_TENANT_ADMIN", "TENANT_ADMIN")
                         .requestMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "TENANT_ADMIN")
-                        .requestMatchers("/api/v1/sales/**").hasAnyRole("ADMIN", "TENANT_ADMIN", "USER")                        .anyRequest().authenticated()
+
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

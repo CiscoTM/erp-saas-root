@@ -21,19 +21,13 @@ public class OperationsApplication {
         SpringApplication.run(OperationsApplication.class, args);
     }
 
-    /**
-     * Este Bean se ejecuta automáticamente al arrancar el microservicio.
-     * Inyectamos el DataSource central y el servicio de migración que creamos en erp-common.
-     */
     @Bean
     public CommandLineRunner runMigrations(DataSource dataSource, TenantMigrationService migrationService) {
         return args -> {
             System.out.println("=======================================================");
             System.out.println(">>> [STARTUP] Iniciando migraciones de Operaciones...");
 
-            // Le pasamos el DataSource por defecto (erp_central)
-            // y la ruta donde ms-operations guarda sus scripts SQL específicos.
-            migrationService.migrateAllTenants(dataSource, "classpath:db/migration/tenants");
+            migrationService.migrateAllTenants(dataSource, "classpath:db/migration/operations", "flyway_schema_history_operations");
 
             System.out.println(">>> [STARTUP] Migraciones de Operaciones completadas.");
             System.out.println("=======================================================");

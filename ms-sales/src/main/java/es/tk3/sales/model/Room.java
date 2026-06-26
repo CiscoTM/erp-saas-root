@@ -17,6 +17,10 @@ public class Room {
 
     private Boolean active = true;
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getId() {
         return id;
     }

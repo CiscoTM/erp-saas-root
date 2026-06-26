@@ -1,5 +1,6 @@
 package es.tk3.sales.controller;
 
+import es.tk3.common.tenant.TenantContext;
 import es.tk3.sales.model.Room;
 import es.tk3.sales.repository.RoomRepository;
 import jakarta.transaction.Transactional;
@@ -19,6 +20,7 @@ public class RoomController {
     @PreAuthorize("hasRole('TENANT_ADMIN')")
     @Transactional
     public ResponseEntity<Room> createRoom(@RequestBody Room room){
+        System.out.println("DEBUG: Tenant actual es -> " + TenantContext.getTenantId());
         Room savedRoom = roomRepository.save(room);
         return ResponseEntity.ok(savedRoom);
     }

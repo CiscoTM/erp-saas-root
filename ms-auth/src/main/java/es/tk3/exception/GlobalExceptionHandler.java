@@ -14,7 +14,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(), // 400 en lugar de 500
+                HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(),
                 LocalDateTime.now(),
                 request.getDescription(false).replace("uri=", "")
@@ -24,12 +24,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
-        // 🔥 ESTA LÍNEA ES VITAL PARA DEBUGEAR
-        ex.printStackTrace();
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Error: " + ex.getMessage(), // Cambiamos el mensaje genérico por el real para ver qué pasa
+                "Error: " + ex.getMessage(),
                 LocalDateTime.now(),
                 request.getDescription(false)
         );

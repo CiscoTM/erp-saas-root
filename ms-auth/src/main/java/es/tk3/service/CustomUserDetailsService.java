@@ -19,7 +19,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
-        // LOGS CRUCIALES: Mira esto en la consola de IntelliJ al intentar loguearte
         System.out.println("--- INTENTO DE LOGIN ---");
         System.out.println("Usuario: " + user.getUsername());
         System.out.println("Clave en DB: " + user.getPassword());
@@ -28,7 +27,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
                 .password(user.getPassword())
-                // Forzamos el prefijo ROLE_ manualmente para que coincida con .hasAuthority("ROLE_ADMIN")
                 .authorities("ROLE_" + user.getRole())
                 .build();
     }

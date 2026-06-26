@@ -12,7 +12,6 @@ public class TenantEvent {
     public TenantEvent() {
     }
 
-    // Getters y Setters
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 

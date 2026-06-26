@@ -20,6 +20,7 @@
         <module>ms-auth</module>
         <module>ms-sales</module>
         <module>ms-operations</module>
+        <module>ms-kitchen</module>
     </modules>
 
     <properties>

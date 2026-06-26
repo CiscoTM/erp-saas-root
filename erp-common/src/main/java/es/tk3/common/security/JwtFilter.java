@@ -33,31 +33,32 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+            System.out.println(">>> [FILTER] Token recibido: " + token.substring(0, 10) + "...");
             try {
                 String tenantId = jwtService.extractTenantId(token);
                 String username = jwtService.extractUsername(token);
                 String role = jwtService.extractRole(token);
 
+                System.out.println(">>> [FILTER] Datos extraídos - User: " + username + " | Tenant: " + tenantId + " | Role: " + role);
+
                 List<SimpleGrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority(role),           // "ADMIN"
-                        new SimpleGrantedAuthority("ROLE_" + role)  // "ROLE_ADMIN"
+                        new SimpleGrantedAuthority(role),
+                        new SimpleGrantedAuthority("ROLE_" + role)
                 );
 
-                // Establecemos el contexto del tenant para esta petición
                 TenantContext.setTenantId(tenantId);
 
-                // CUMPLIMIENTO D: Propagación de Roles con prefijo ROLE_
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        authorities
+                        username, null, authorities
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                System.out.println(">>> [FILTER] Autenticación establecida en SecurityContext");
 
             } catch (Exception e) {
+                System.err.println(">>> [FILTER-ERROR] Error validando token: " + e.getMessage());
                 SecurityContextHolder.clearContext();
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido: " + e.getMessage());
                 return;
             }
         }
@@ -65,7 +66,6 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            // CUMPLIMIENTO B: Limpieza del Contexto (ThreadLocal) al finalizar la petición
             TenantContext.clear();
         }
     }

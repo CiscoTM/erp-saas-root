@@ -2,6 +2,8 @@ package es.tk3.common.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "tenant_users")
 public class TenantUser {
@@ -9,16 +11,23 @@ public class TenantUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(length = 50, unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(length = 255, nullable = false)
     private String password;
 
+    @Column(length = 100, nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String role; // Ejemplo: 'TENANT_ADMIN'
+    @Column(length = 50, nullable = false)
+    private String role;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     public TenantUser() {}
 
@@ -33,4 +42,9 @@ public class TenantUser {
     public void setEmail(String email) { this.email = email; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

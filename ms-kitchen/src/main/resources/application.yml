@@ -1,0 +1,62 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: ms-kitchen
+  datasource:
+    url: jdbc:postgresql://localhost:5433/erp_central?ApplicationName=CentralPool-MS-KITCHEN
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:admin_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
+      idle-timeout: 30000
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        multiTenancy: DATABASE
+
+  flyway:
+    enabled: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+
+app:
+  tenant:
+    flyway:
+      Locations: classpath:db/migration/kitchen
+    datasource:
+      base-url: jdbc:postgresql://localhost:5433/
+      username: ${DB_USER:admin}
+      password: ${DB_PASSWORD:admin_password}
+  kafka:
+    topics:
+      tenant-events: "core.tenant.events"
+    groups:
+      tenant-setup: "kafka-group.sales.tenant-setup"
+
+logging:
+  level:
+    org.springframework.security: DEBUG

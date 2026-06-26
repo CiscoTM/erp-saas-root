@@ -1,10 +1,13 @@
 package es.tk3.operations.consumers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import es.tk3.common.dto.BookingEventDTO;
 import es.tk3.common.tenant.TenantContext;
+import es.tk3.operations.dto.BookingEventDTO;
 import es.tk3.operations.service.FunctionSheetService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 import java.util.logging.Logger;
 
@@ -20,38 +23,43 @@ public class BookingEventConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "sales.bookings", groupId = "operations-group-v4")
-    public void consumeBookingEvent(String rawMessage) {
+    @KafkaListener(
+            topics = "${app.kafka.topics.booking-events}",
+            groupId = "${app.kafka.groups.booking-processor}"
+    )
+    public void consumeBookingEvent(
+            String rawMessage,
+            @Header(KafkaHeaders.OFFSET) long offset,      // 👁️ Captura el Offset
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition   // 👁️ Captura la Partición
+    ) {
         try {
-            // 1. Limpieza de comillas extras si existen
             String json = rawMessage;
             if (json.startsWith("\"") && json.endsWith("\"")) {
                 json = objectMapper.readValue(json, String.class);
             }
 
-            // 2. Deserializar el DTO
             BookingEventDTO event = objectMapper.readValue(json, BookingEventDTO.class);
 
-            // 3. ESTABLECER EL CONTEXTO USANDO EL DTO (Más fiable que el Header)
-            if (event.getTenantId() != null) {
+            if (event.getTenantId() != null && !event.getTenantId().trim().isEmpty()) {
                 TenantContext.setTenantId(event.getTenantId());
+                logger.info(">>> [KAFKA] Contexto establecido para tenant: " + event.getTenantId());
             } else {
-                throw new RuntimeException("El evento no contiene un tenantId válido");
+                logger.severe("❌ [KAFKA] MENSAJE DESCARTADO [Partición: " + partition + ", Offset: " + offset + "]: Se recibió un evento con ID " + event.getEventId() + " pero no contiene TenantId.");
+                return;
             }
-
-            logger.info(">>> [KAFKA] Procesando " + event.getEventType() + " para: " + event.getEventName());
-
-            // 4. Lógica de negocio
-            if ("BOOKING_CONFIRMED".equals(event.getEventType())) {
+            String type = event.getEventType();
+            if ("BOOKING_CONFIRMED".equals(type)) {
                 functionSheetService.createFunctionSheetFromEvent(event);
-                logger.info("✅ Hoja de servicio creada con éxito para " + event.getTenantId());
+            }
+            else if ("BOOKING_CANCELLED".equals(type)) {
+                functionSheetService.cancelFunctionSheet(event);
+            }
+            else {
+                logger.warning(">>> [KAFKA] Evento ignorado (Tipo no soportado): " + type);
             }
 
         } catch (Exception e) {
-            logger.severe("❌ ERROR EN CONSUMER: " + e.getMessage());
-            e.printStackTrace();
-            // ¡CRÍTICO! Debes relanzar la excepción para que Kafka sepa que falló
-            // y pueda reintentar o enviar a una Dead Letter Topic (DLT).
+            logger.severe("❌ ERROR EN CONSUMER: " + e.getMessage() + " Tenant: " + TenantContext.getTenantId());
             throw new RuntimeException("Error procesando evento de Kafka", e);
         } finally {
             TenantContext.clear();

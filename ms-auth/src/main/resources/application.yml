@@ -4,17 +4,26 @@ server:
 spring:
   application:
     name: ms-auth
-
+  flyway:
+    enabled: false
   datasource:
-    url: jdbc:postgresql://localhost:5433/erp_central
+    url: jdbc:postgresql://localhost:5433/erp_central?ApplicationName=CentralPool-MS-AUTH
     username: ${DB_USER:admin}
     password: ${DB_PASSWORD:admin_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
+      idle-timeout: 30000
+      connection-timeout: 30000
 
   jpa:
     hibernate:
       ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
+    open-in-view: false
 
 app:
   tenant:
@@ -24,6 +33,12 @@ app:
       base-url: jdbc:postgresql://localhost:5433/
       username: ${DB_USER:admin}
       password: ${DB_PASSWORD:admin_password}
+  kafka:
+    topics:
+      user-events: "auth.user.events"
+    groups:
+      user-sync: "kafka-group.auth.user-sync"
+
 
 
 application:

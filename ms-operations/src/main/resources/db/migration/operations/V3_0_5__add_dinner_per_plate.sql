@@ -1,0 +1,1 @@
+ALTER TABLE dish_operation ADD COLUMN diners_per_plate INTEGER DEFAULT 1;

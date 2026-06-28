@@ -19,7 +19,7 @@ El ERP está compuesto por los siguientes módulos independientes:
 3.  **`ms-kitchen`:** (Master Data) Corazón de la producción. Gestiona el catálogo maestro de materias primas, alérgenos (normativa UE), escandallos (recetas), platos y plantillas de menú. Propaga los costes reales hacia los demás módulos.
 4.  **`ms-operations`:** Logística y control financiero. Recibe reservas y genera Hojas de Servicio (`Function Sheets`) automáticamente. Mantiene las políticas de rentabilidad (Suelos, Techos, Overheads) y aloja el `PricingEngine`.
 5.  **`ms-sales`:** Frontend transaccional de ventas. Gestiona clientes, espacios y reservas. Ejecuta simulaciones de precios en tiempo real mediante el `PricingSimulationService` apoyándose en réplicas locales de datos operativos.
-
+6.  **`ms-gateway`:** API Gateway centralizado basado en Spring Cloud Gateway. Actúa como único punto de entrada, gestiona la validación centralizada de tokens JWT, implementa *Rate Limiting* por inquilino mediante Redis y asegura la propagación de trazas de observabilidad.
 ## 💡 Flujos Core Destacados
 
 * **Pricing Corridor (Simulador de Precios):** Al crear una reserva, el sistema evalúa el coste real de los platos seleccionados, suma los porcentajes operativos y de riesgo (Overhead), y devuelve un pasillo de precios sugerido y mínimo exigido.

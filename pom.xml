@@ -21,6 +21,7 @@
         <module>ms-sales</module>
         <module>ms-operations</module>
         <module>ms-kitchen</module>
+        <module>ms-gateway</module>
     </modules>
 
     <properties>

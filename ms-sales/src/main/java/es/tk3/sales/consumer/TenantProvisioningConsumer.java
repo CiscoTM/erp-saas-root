@@ -26,3 +26,4 @@ public class TenantProvisioningConsumer extends AbstractTenantProvisioningConsum
         processTenantProvisioning(payload, flywayLocations, "flyway_schema_history_sales", "SALES");
     }
 }
+

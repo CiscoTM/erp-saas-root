@@ -1,0 +1,58 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-gateway
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    gateway:
+      routes:
+        - id: ms-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**, /api/v1/tenants/**, /auth/**
+
+        - id: ms-sales
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/sales/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@tenantKeyResolver}"
+
+        - id: ms-operations
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/operations/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@tenantKeyResolver}"
+
+        - id: ms-kitchen
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/recipes/**, /api/dishes/**, /api/raw-materials/**, /api/allergens/**, /api/menu-templates/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@tenantKeyResolver}"
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
